@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>لوحة الإدارة - Admin Panel</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --muted: #f8fafc;
+      --border: #e2e8f0;
+      --text: #1e293b;
+      --muted-foreground: #64748b;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      color: var(--text);
+    }
+
+    .admin-container {
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+      margin: 20px;
+      overflow: hidden;
+    }
+
+    .admin-header {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      color: white;
+      padding: 30px;
+      text-align: center;
+    }
+
+    .admin-nav {
+      background: var(--muted);
+      padding: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-pills .nav-link {
+      border-radius: 12px;
+      margin: 0 5px;
+      padding: 12px 20px;
+      font-weight: 500;
+      transition: all 0.3s ease;
+    }
+
+    .nav-pills .nav-link.active {
+      background: var(--primary);
+      color: white;
+    }
+
+    .nav-pills .nav-link:not(.active) {
+      color: var(--muted-foreground);
+      background: white;
+    }
+
+    .nav-pills .nav-link:hover:not(.active) {
+      background: #e2e8f0;
+      color: var(--text);
+    }
+
+    .admin-content {
+      padding: 30px;
+    }
+
+    .stats-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 25px;
+      text-align: center;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .stats-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    }
+
+    .stats-number {
+      font-size: 2.5rem;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+
+    .stats-label {
+      color: var(--muted-foreground);
+      font-size: 0.9rem;
+    }
+
+    .table-container {
+      background: white;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+      margin-top: 20px;
+    }
+
+    .table {
+      margin: 0;
+    }
+
+    .table th {
+      background: var(--muted);
+      border: none;
+      padding: 15px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .table td {
+      padding: 15px;
+      border-color: var(--border);
+      vertical-align: middle;
+    }
+
+    .btn-action {
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: none;
+      font-size: 0.85rem;
+      margin: 0 2px;
+      transition: all 0.3s ease;
+    }
+
+    .btn-edit {
+      background: var(--warning);
+      color: white;
+    }
+
+    .btn-edit:hover {
+      background: #d97706;
+      color: white;
+    }
+
+    .btn-delete {
+      background: var(--danger);
+      color: white;
+    }
+
+    .btn-delete:hover {
+      background: #dc2626;
+      color: white;
+    }
+
+    .btn-view {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-view:hover {
+      background: var(--primary-dark);
+      color: white;
+    }
+
+    .status-badge {
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+
+    .status-new {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+
+    .status-progress {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .status-resolved {
+      background: #d1fae5;
+      color: #065f46;
+    }
+
+    .priority-badge {
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+
+    .priority-low {
+      background: #f0f9ff;
+      color: #0369a1;
+    }
+
+    .priority-medium {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .priority-high {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .priority-urgent {
+      background: #fecaca;
+      color: #7f1d1d;
+    }
+
+    .search-box {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 16px;
+      margin-bottom: 20px;
+    }
+
+    .modal-content {
+      border-radius: 16px;
+      border: none;
+    }
+
+    .modal-header {
+      background: var(--muted);
+      border-bottom: 1px solid var(--border);
+      border-radius: 16px 16px 0 0;
+    }
+
+    .form-control, .form-select {
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      padding: 12px;
+    }
+
+    .form-control:focus, .form-select:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.25);
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .user-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="admin-container">
+    <!-- Header -->
+    <div class="admin-header">
+      <h1><i class="fas fa-cogs me-3"></i>لوحة الإدارة</h1>
+      <p class="mb-0">إدارة البلاغات والمستخدمين</p>
+    </div>
+
+    <!-- Navigation -->
+    <div class="admin-nav">
+      <ul class="nav nav-pills justify-content-center">
+        <li class="nav-item">
+          <a class="nav-link active" href="#" data-tab="dashboard">
+            <i class="fas fa-chart-bar me-2"></i>لوحة المعلومات
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#" data-tab="reports">
+            <i class="fas fa-file-alt me-2"></i>إدارة البلاغات
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#" data-tab="users">
+            <i class="fas fa-users me-2"></i>المستخدمين
+          </a>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Content -->
+    <div class="admin-content">
+      <!-- Dashboard Tab -->
+      <div id="dashboard" class="tab-content active">
+        <div class="row g-4 mb-4">
+          <div class="col-md-3">
+            <div class="stats-card">
+              <div class="stats-number text-primary" id="totalReports">0</div>
+              <div class="stats-label">إجمالي البلاغات</div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="stats-card">
+              <div class="stats-number text-warning" id="pendingReports">0</div>
+              <div class="stats-label">البلاغات المعلقة</div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="stats-card">
+              <div class="stats-number text-success" id="resolvedReports">0</div>
+              <div class="stats-label">البلاغات المحلولة</div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="stats-card">
+              <div class="stats-number text-info" id="totalUsers">0</div>
+              <div class="stats-label">عدد المستخدمين</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-12">
+            <h4 class="mb-3">البلاغات الأخيرة</h4>
+            <div class="table-container">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>العنوان</th>
+                    <th>المنطقة</th>
+                    <th>الحالة</th>
+                    <th>التاريخ</th>
+                    <th>الإجراءات</th>
+                  </tr>
+                </thead>
+                <tbody id="recentReportsTable">
+                  <!-- Recent reports will be loaded here -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reports Management Tab -->
+      <div id="reports" class="tab-content">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h4>إدارة البلاغات</h4>
+          <button class="btn btn-primary" onclick="refreshReports()">
+            <i class="fas fa-sync-alt me-2"></i>تحديث
+          </button>
+        </div>
+
+        <input type="text" class="search-box" id="reportsSearch" placeholder="البحث في البلاغات...">
+
+        <div class="table-container">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>المعرف</th>
+                <th>العنوان</th>
+                <th>الوصف</th>
+                <th>المنطقة</th>
+                <th>البلدية</th>
+                <th>الفئة</th>
+                <th>الأولوية</th>
+                <th>الحالة</th>
+                <th>التاريخ</th>
+                <th>الصور</th>
+                <th>الإجراءات</th>
+              </tr>
+            </thead>
+            <tbody id="reportsTable">
+              <!-- Reports will be loaded here -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Users Tab -->
+      <div id="users" class="tab-content">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h4>قائمة المستخدمين</h4>
+          <button class="btn btn-success" onclick="addUser()">
+            <i class="fas fa-plus me-2"></i>إضافة مستخدم
+          </button>
+        </div>
+
+        <input type="text" class="search-box" id="usersSearch" placeholder="البحث في المستخدمين...">
+
+        <div class="table-container">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>المستخدم</th>
+                <th>البريد الإلكتروني</th>
+                <th>عدد البلاغات</th>
+                <th>تاريخ التسجيل</th>
+                <th>الحالة</th>
+                <th>الإجراءات</th>
+              </tr>
+            </thead>
+            <tbody id="usersTable">
+              <!-- Users will be loaded here -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Report Modal -->
+  <div class="modal fade" id="editReportModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">تعديل البلاغ</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="editReportForm">
+            <input type="hidden" id="editReportId">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">العنوان</label>
+                <input type="text" class="form-control" id="editTitle" required>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">المنطقة</label>
+                <input type="text" class="form-control" id="editDistrict" required>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">البلدية</label>
+                <input type="text" class="form-control" id="editCommune" required>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">الفئة</label>
+                <select class="form-select" id="editCategory" required>
+                  <option value="lighting">💡 إنارة</option>
+                  <option value="pothole">🕳️ حفر</option>
+                  <option value="waste">🗑️ نفايات</option>
+                  <option value="water">💧 مياه</option>
+                  <option value="works">🚧 أشغال</option>
+                  <option value="other">📋 أخرى</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">الأولوية</label>
+                <select class="form-select" id="editPriority" required>
+                  <option value="low">منخفضة</option>
+                  <option value="medium">متوسطة</option>
+                  <option value="high">عالية</option>
+                  <option value="urgent">عاجلة</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">الحالة</label>
+                <select class="form-select" id="editStatus" required>
+                  <option value="new">جديدة</option>
+                  <option value="in-progress">قيد المعالجة</option>
+                  <option value="resolved">تم الحل</option>
+                  <option value="resolved_by_official">تم الحل من قبل المسؤول</option>
+                </select>
+              </div>
+              <div class="col-12">
+                <label class="form-label">الوصف</label>
+                <textarea class="form-control" id="editDescription" rows="3" required></textarea>
+              </div>
+              <div class="col-12">
+                <label class="form-label">ملاحظة داخلية</label>
+                <textarea class="form-control" id="editInternalNote" rows="2"></textarea>
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+          <button type="button" class="btn btn-primary" onclick="saveReportChanges()">حفظ التغييرات</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- View Images Modal -->
+  <div class="modal fade" id="viewImagesModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">صور البلاغ</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div id="modalImagesContent" class="row g-3">
+            <!-- Images will be loaded here -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="reports-storage.js"></script>
+  <script src="users-storage.js"></script>
+  <script src="supabase-config.js"></script>
+  <script>
+    // Global variables
+    let currentReports = [];
+    let currentUsers = [];
+
+    // Initialize admin panel
+    document.addEventListener('DOMContentLoaded', async function() {
+      await initializeAdminPanel();
+      await loadDashboardData();
+    });
+
+    // Tab navigation
+    document.querySelectorAll('[data-tab]').forEach(tab => {
+      tab.addEventListener('click', function(e) {
+        e.preventDefault();
+        const targetTab = this.dataset.tab;
+        
+        // Update active tab
+        document.querySelectorAll('[data-tab]').forEach(t => t.classList.remove('active'));
+        this.classList.add('active');
+        
+        // Show target content
+        document.querySelectorAll('.tab-content').forEach(content => {
+          content.classList.remove('active');
+        });
+        document.getElementById(targetTab).classList.add('active');
+        
+        // Load tab-specific data
+        if (targetTab === 'reports') {
+          loadReportsTable();
+        } else if (targetTab === 'users') {
+          loadUsersTable();
+        }
+      });
+    });
+
+    // Initialize admin panel
+    async function initializeAdminPanel() {
+      try {
+        // Initialize Supabase if available
+        if (window.supabaseConfig && window.supabaseConfig.initSupabase) {
+          await window.supabaseConfig.initSupabase();
+        }
+        
+        // Initialize users storage
+        if (window.usersStorage) {
+          await window.usersStorage.initializeDefaultUsers();
+        }
+      } catch (error) {
+        console.error('Error initializing admin panel:', error);
+      }
+    }
+
+    // Load dashboard data
+    async function loadDashboardData() {
+      try {
+        const reports = window.reportsStorage.loadReports();
+        const users = await window.usersStorage.loadUsers();
+        
+        // Update statistics
+        document.getElementById('totalReports').textContent = reports.length;
+        document.getElementById('pendingReports').textContent = reports.filter(r => r.status === 'new' || r.status === 'in-progress').length;
+        document.getElementById('resolvedReports').textContent = reports.filter(r => r.status === 'resolved' || r.status === 'resolved_by_official').length;
+        document.getElementById('totalUsers').textContent = users.length;
+        
+        // Load recent reports
+        const recentReports = reports.slice(0, 5);
+        const recentTable = document.getElementById('recentReportsTable');
+        recentTable.innerHTML = '';
+        
+        recentReports.forEach(report => {
+          const row = createRecentReportRow(report);
+          recentTable.appendChild(row);
+        });
+      } catch (error) {
+        console.error('Error loading dashboard data:', error);
+      }
+    }
+
+    // Update dashboard stats (called from other functions)
+    async function updateDashboardStats() {
+      await loadDashboardData();
+    }
+
+    // Create recent report row
+    function createRecentReportRow(report) {
+      const row = document.createElement('tr');
+      const statusClass = getStatusClass(report.status);
+      const formattedDate = new Date(report.created_at).toLocaleDateString('ar-SA');
+      
+      row.innerHTML = `
+        <td>${report.title}</td>
+        <td>${report.district}</td>
+        <td><span class="status-badge ${statusClass}">${getStatusText(report.status)}</span></td>
+        <td>${formattedDate}</td>
+        <td>
+          <button class="btn btn-action btn-view" onclick="viewReport('${report.id}')">
+            <i class="fas fa-eye"></i>
+          </button>
+        </td>
+      `;
+      
+      return row;
+    }
+
+    // Load reports table
+    function loadReportsTable() {
+      currentReports = window.reportsStorage.loadReports();
+      displayReports(currentReports);
+    }
+
+    // Display reports in table
+    function displayReports(reports) {
+      const table = document.getElementById('reportsTable');
+      table.innerHTML = '';
+      
+      reports.forEach(report => {
+        const row = createReportRow(report);
+        table.appendChild(row);
+      });
+    }
+
+    // Create report row
+    function createReportRow(report) {
+      const row = document.createElement('tr');
+      const statusClass = getStatusClass(report.status);
+      const priorityClass = getPriorityClass(report.priority);
+      const formattedDate = new Date(report.created_at).toLocaleDateString('ar-SA');
+      const hasImages = report.hasImages ? '<i class="fas fa-camera text-primary"></i>' : '<i class="fas fa-camera text-muted"></i>';
+      
+      row.innerHTML = `
+        <td><small>${report.id}</small></td>
+        <td>${report.title}</td>
+        <td><small>${report.description.substring(0, 50)}...</small></td>
+        <td>${report.district}</td>
+        <td>${report.commune}</td>
+        <td>${getCategoryText(report.category)}</td>
+        <td><span class="priority-badge ${priorityClass}">${getPriorityText(report.priority)}</span></td>
+        <td><span class="status-badge ${statusClass}">${getStatusText(report.status)}</span></td>
+        <td><small>${formattedDate}</small></td>
+        <td class="text-center">${hasImages}</td>
+        <td>
+          <button class="btn btn-action btn-view" onclick="viewReport('${report.id}')" title="عرض">
+            <i class="fas fa-eye"></i>
+          </button>
+          <button class="btn btn-action btn-edit" onclick="editReport('${report.id}')" title="تعديل">
+            <i class="fas fa-edit"></i>
+          </button>
+          ${report.status !== 'resolved' && report.status !== 'resolved_by_official' ? 
+            `<button class="btn btn-action" style="background:#059669;color:white;" onclick="markAsResolvedByOfficial('${report.id}')" title="تم الحل من قبل المسؤول">
+              <i class="fas fa-check-circle"></i>
+            </button>` : ''}
+          <button class="btn btn-action btn-delete" onclick="deleteReport('${report.id}')" title="حذف">
+            <i class="fas fa-trash"></i>
+          </button>
+          ${report.hasImages ? `<button class="btn btn-action btn-view" onclick="viewImages('${report.id}')" title="عرض الصور"><i class="fas fa-camera"></i></button>` : ''}
+        </td>
+      `;
+      
+      return row;
+    }
+
+    // Load users table
+    async function loadUsersTable() {
+      try {
+        // Show loading indicator
+        const table = document.getElementById('usersTable');
+        table.innerHTML = '<tr><td colspan="6" class="text-center">جاري تحميل المستخدمين...</td></tr>';
+        
+        // Load users from Supabase or localStorage
+        currentUsers = await window.usersStorage.loadUsers();
+        
+        displayUsers(currentUsers);
+        
+        // Update dashboard stats
+        updateDashboardStats();
+      } catch (error) {
+        console.error('Error loading users:', error);
+        const table = document.getElementById('usersTable');
+        table.innerHTML = '<tr><td colspan="6" class="text-center text-danger">خطأ في تحميل المستخدمين</td></tr>';
+      }
+    }
+
+    // Display users in table
+    function displayUsers(users) {
+      const table = document.getElementById('usersTable');
+      table.innerHTML = '';
+      
+      users.forEach(user => {
+        const row = createUserRow(user);
+        table.appendChild(row);
+      });
+    }
+
+    // Create user row
+    function createUserRow(user) {
+      const row = document.createElement('tr');
+      // Handle both Supabase (created_at) and localStorage (registrationDate) formats
+      const dateField = user.created_at || user.registrationDate;
+      const formattedDate = new Date(dateField).toLocaleDateString('ar-SA');
+      const avatar = (user.name || user.full_name || 'U').charAt(0).toUpperCase();
+      const userName = user.name || user.full_name || 'مستخدم غير معروف';
+      const userEmail = user.email || 'غير محدد';
+      const userId = user.id || user.user_id || 'غير محدد';
+      const reportsCount = user.reportsCount || user.reports_count || 0;
+      const userStatus = user.status || 'active';
+      
+      row.innerHTML = `
+        <td>
+          <div class="d-flex align-items-center">
+            <div class="user-avatar me-3">${avatar}</div>
+            <div>
+              <div class="fw-bold">${userName}</div>
+              <small class="text-muted">${userId}</small>
+            </div>
+          </div>
+        </td>
+        <td>${userEmail}</td>
+        <td><span class="badge bg-primary">${reportsCount}</span></td>
+        <td><small>${formattedDate}</small></td>
+        <td><span class="badge ${userStatus === 'active' ? 'bg-success' : 'bg-secondary'}">${userStatus === 'active' ? 'نشط' : 'غير نشط'}</span></td>
+        <td>
+          <button class="btn btn-action btn-edit" onclick="editUser('${userId}')" title="تعديل">
+            <i class="fas fa-edit"></i>
+          </button>
+          <button class="btn btn-action btn-delete" onclick="deleteUser('${userId}')" title="حذف">
+            <i class="fas fa-trash"></i>
+          </button>
+        </td>
+      `;
+      
+      return row;
+    }
+
+    // Helper functions
+    function getStatusClass(status) {
+      switch(status) {
+        case 'new': return 'status-new';
+        case 'in-progress': return 'status-progress';
+        case 'resolved': return 'status-resolved';
+        case 'resolved_by_official': return 'status-resolved';
+        default: return 'status-new';
+      }
+    }
+
+    function getStatusText(status) {
+      switch(status) {
+        case 'new': return 'جديدة';
+        case 'in-progress': return 'قيد المعالجة';
+        case 'resolved': return 'تم الحل';
+        case 'resolved_by_official': return 'تم الحل من قبل المسؤول';
+        default: return 'جديدة';
+      }
+    }
+
+    function getPriorityClass(priority) {
+      switch(priority) {
+        case 'low': return 'priority-low';
+        case 'medium': return 'priority-medium';
+        case 'high': return 'priority-high';
+        case 'urgent': return 'priority-urgent';
+        default: return 'priority-medium';
+      }
+    }
+
+    function getPriorityText(priority) {
+      switch(priority) {
+        case 'low': return 'منخفضة';
+        case 'medium': return 'متوسطة';
+        case 'high': return 'عالية';
+        case 'urgent': return 'عاجلة';
+        default: return 'متوسطة';
+      }
+    }
+
+    function getCategoryText(category) {
+      switch(category) {
+        case 'lighting': return '💡 إنارة';
+        case 'pothole': return '🕳️ حفر';
+        case 'waste': return '🗑️ نفايات';
+        case 'water': return '💧 مياه';
+        case 'works': return '🚧 أشغال';
+        case 'other': return '📋 أخرى';
+        default: return '📋 أخرى';
+      }
+    }
+
+    // Report management functions
+    function viewReport(reportId) {
+      const report = currentReports.find(r => r.id === reportId);
+      if (report) {
+        alert(`عرض البلاغ: ${report.title}\n\nالوصف: ${report.description}\n\nالمنطقة: ${report.district}\nالبلدية: ${report.commune}\nالفئة: ${getCategoryText(report.category)}\nالأولوية: ${getPriorityText(report.priority)}\nالحالة: ${getStatusText(report.status)}`);
+      }
+    }
+
+    function editReport(reportId) {
+      const report = currentReports.find(r => r.id === reportId);
+      if (report) {
+        // Fill edit form
+        document.getElementById('editReportId').value = report.id;
+        document.getElementById('editTitle').value = report.title;
+        document.getElementById('editDescription').value = report.description;
+        document.getElementById('editDistrict').value = report.district;
+        document.getElementById('editCommune').value = report.commune;
+        document.getElementById('editCategory').value = report.category;
+        document.getElementById('editPriority').value = report.priority;
+        document.getElementById('editStatus').value = report.status;
+        document.getElementById('editInternalNote').value = report.internalNote || '';
+        
+        // Show modal
+        new bootstrap.Modal(document.getElementById('editReportModal')).show();
+      }
+    }
+
+    function saveReportChanges() {
+      const reportId = document.getElementById('editReportId').value;
+      const updatedData = {
+        title: document.getElementById('editTitle').value,
+        description: document.getElementById('editDescription').value,
+        district: document.getElementById('editDistrict').value,
+        commune: document.getElementById('editCommune').value,
+        category: document.getElementById('editCategory').value,
+        priority: document.getElementById('editPriority').value,
+        status: document.getElementById('editStatus').value,
+        internalNote: document.getElementById('editInternalNote').value,
+        updated_at: new Date().toISOString()
+      };
+      
+      if (window.reportsStorage.updateReport(reportId, updatedData)) {
+        bootstrap.Modal.getInstance(document.getElementById('editReportModal')).hide();
+        loadReportsTable();
+        loadDashboardData();
+        alert('تم تحديث البلاغ بنجاح!');
+      } else {
+        alert('فشل في تحديث البلاغ!');
+      }
+    }
+
+    function deleteReport(reportId) {
+      if (confirm('هل أنت متأكد من حذف هذا البلاغ؟')) {
+        if (window.reportsStorage.deleteReport(reportId)) {
+          loadReportsTable();
+          loadDashboardData();
+          alert('تم حذف البلاغ بنجاح!');
+        } else {
+          alert('فشل في حذف البلاغ!');
+        }
+      }
+    }
+
+    function viewImages(reportId) {
+      const report = currentReports.find(r => r.id === reportId);
+      if (report && report.hasImages) {
+        const modalContent = document.getElementById('modalImagesContent');
+        modalContent.innerHTML = '';
+        
+        if (report.beforeImage) {
+          const beforeDiv = document.createElement('div');
+          beforeDiv.className = 'col-md-6';
+          beforeDiv.innerHTML = `
+            <h6>📷 صورة قبل الأشغال</h6>
+            <img src="${report.beforeImage}" class="img-fluid rounded" alt="صورة قبل الأشغال">
+          `;
+          modalContent.appendChild(beforeDiv);
+        }
+        
+        if (report.afterImage) {
+          const afterDiv = document.createElement('div');
+          afterDiv.className = 'col-md-6';
+          afterDiv.innerHTML = `
+            <h6>📷 صورة بعد الأشغال</h6>
+            <img src="${report.afterImage}" class="img-fluid rounded" alt="صورة بعد الأشغال">
+          `;
+          modalContent.appendChild(afterDiv);
+        }
+        
+        new bootstrap.Modal(document.getElementById('viewImagesModal')).show();
+      }
+    }
+
+    // User management functions
+    function addUser() {
+      const name = prompt('اسم المستخدم:');
+      const email = prompt('البريد الإلكتروني:');
+      
+      if (name && email) {
+        const newUser = {
+          id: 'user_' + Date.now(),
+          name: name,
+          email: email,
+          registrationDate: new Date().toISOString(),
+          status: 'active',
+          reportsCount: 0
+        };
+        
+        currentUsers.push(newUser);
+        localStorage.setItem('adminUsers', JSON.stringify(currentUsers));
+        loadUsersTable();
+        loadDashboardData();
+        alert('تم إضافة المستخدم بنجاح!');
+      }
+    }
+
+    function editUser(userId) {
+      const user = currentUsers.find(u => u.id === userId);
+      if (user) {
+        const newName = prompt('اسم المستخدم:', user.name);
+        const newEmail = prompt('البريد الإلكتروني:', user.email);
+        
+        if (newName && newEmail) {
+          user.name = newName;
+          user.email = newEmail;
+          localStorage.setItem('adminUsers', JSON.stringify(currentUsers));
+          loadUsersTable();
+          alert('تم تحديث المستخدم بنجاح!');
+        }
+      }
+    }
+
+    function deleteUser(userId) {
+      if (confirm('هل أنت متأكد من حذف هذا المستخدم؟')) {
+        currentUsers = currentUsers.filter(u => u.id !== userId);
+        localStorage.setItem('adminUsers', JSON.stringify(currentUsers));
+        loadUsersTable();
+        loadDashboardData();
+        alert('تم حذف المستخدم بنجاح!');
+      }
+    }
+
+    // Mark report as resolved by official (Admin function)
+    function markAsResolvedByOfficial(reportId) {
+      if (!reportId) {
+        alert('خطأ: معرف البلاغ غير صحيح');
+        return;
+      }
+      
+      // تأكيد من المسؤول
+      if (!confirm('هل أنت متأكد من تحديد هذا البلاغ كمحلول من قبل المسؤول؟')) {
+        return;
+      }
+      
+      try {
+        // تحديث حالة البلاغ في التخزين
+        const updatedData = {
+          status: 'resolved_by_official',
+          resolved_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          resolved_by: 'admin' // تحديد أن المسؤول هو من حل البلاغ
+        };
+        
+        const success = window.reportsStorage.updateReport(reportId, updatedData);
+        
+        if (success) {
+          // إعادة تحميل البلاغات وتحديث الإحصائيات
+          loadReportsTable();
+          loadDashboardData();
+          
+          // عرض رسالة نجاح
+          alert('✅ تم تحديث حالة البلاغ إلى "تم الحل من قبل المسؤول" بنجاح!');
+          
+          console.log('تم تحديث البلاغ بنجاح من قبل المسؤول:', reportId);
+        } else {
+          alert('❌ فشل في تحديث حالة البلاغ. يرجى المحاولة مرة أخرى.');
+          console.error('فشل في تحديث البلاغ:', reportId);
+        }
+      } catch (error) {
+        console.error('خطأ في تحديث البلاغ:', error);
+        alert('❌ حدث خطأ أثناء تحديث البلاغ. يرجى المحاولة مرة أخرى.');
+      }
+    }
+
+    // Search functionality
+    document.getElementById('reportsSearch').addEventListener('input', function() {
+      const searchTerm = this.value.toLowerCase();
+      const filteredReports = currentReports.filter(report => 
+        report.title.toLowerCase().includes(searchTerm) ||
+        report.description.toLowerCase().includes(searchTerm) ||
+        report.district.toLowerCase().includes(searchTerm) ||
+        report.commune.toLowerCase().includes(searchTerm)
+      );
+      displayReports(filteredReports);
+    });
+
+    document.getElementById('usersSearch').addEventListener('input', function() {
+      const searchTerm = this.value.toLowerCase();
+      const filteredUsers = currentUsers.filter(user => 
+        user.name.toLowerCase().includes(searchTerm) ||
+        user.email.toLowerCase().includes(searchTerm)
+      );
+      displayUsers(filteredUsers);
+    });
+
+    // Refresh functions
+    async function refreshReports() {
+      loadReportsTable();
+      await loadDashboardData();
+    }
+
+    async function refreshUsers() {
+      await loadUsersTable();
+      await loadDashboardData();
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+{
+  "name": "reports-management-system",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "python -m http.server 8000",
+    "build": "mkdir -p public && cp -r *.html *.js *.css *.png public/ || (md public 2>nul & copy *.html public\\ & copy *.js public\\ & copy *.css public\\ & copy *.png public\\)",
+    "start": "python -m http.server 8000"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.7"
+  }
+}

@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>منصة البلاغات المدنية - مرحباً بك</title>
+  
+  <!-- Bootstrap RTL CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css">
+  
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- Fonts to match index.html -->
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  
+  <style>
+    /* Fixed color variables to match index.html */
+    :root{
+      --background:#ffffff; --foreground:#0f172a; --card:#f8fafc; --card-foreground:#0f172a;
+      --primary:#7c3aed; --primary-foreground:#ffffff; --secondary:#f1f5f9; --secondary-foreground:#0f172a;
+      --muted:#f1f5f9; --muted-foreground:#64748b; --accent:#f1f5f9; --border:#e2e8f0;
+      --input:#f8fafc; --ring:#7c3aed; --blur-overlay: rgba(255,255,255,.35);
+    }
+    
+    body {
+      font-family:'DM Sans','Space Grotesk',-apple-system,BlinkMacSystemFont,sans-serif;
+      background:var(--background); color:var(--foreground); line-height:1.6;
+    }
+    
+    /* Body background with blur to match index.html */
+    .body-bg-blur::before{
+      content:""; position:fixed; inset:0; z-index:-1;
+      background:
+        linear-gradient(0deg, rgba(255,255,255,.35), rgba(255,255,255,.35)),
+        url("image.png") center/cover no-repeat;
+      filter: blur(18px);
+      transform: scale(1.08);
+    }
+    
+    .bg-gradient-overlay {
+      background: linear-gradient(135deg, rgba(124, 58, 237, 0.8), rgba(168, 85, 247, 0.7));
+      min-height: 100vh;
+    }
+    
+    .hero-section {
+      padding: 120px 0 80px;
+      text-align: center;
+      color: white;
+    }
+    
+    .hero-title {
+      font-size: 3rem;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+    }
+    
+    .hero-subtitle {
+      font-size: 1.5rem;
+      margin-bottom: 2rem;
+      font-weight: 400;
+    }
+    
+    .feature-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 16px rgba(0,0,0,.08);
+      transition: .3s;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .feature-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--primary), #a855f7);
+    }
+    
+    .feature-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 32px rgba(139,92,246,.15);
+      border-color: var(--primary);
+    }
+    
+    .feature-icon {
+      font-size: 2.5rem;
+      color: var(--primary);
+      margin-bottom: 20px;
+    }
+    
+    .cta-section {
+      background: linear-gradient(90deg, var(--primary), #a855f7);
+      padding: 60px 0;
+      color: var(--primary-foreground);
+      text-align: center;
+      border-radius: 16px;
+      margin: 40px 0;
+    }
+    
+    .btn-primary {
+      background-color: var(--primary);
+      border-color: var(--primary);
+      padding: 10px 25px;
+      font-weight: 500;
+      border-radius: 8px;
+      transition: all 0.3s ease;
+    }
+    
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+      background-color: #6d28d9;
+      border-color: #6d28d9;
+    }
+    
+    .btn-outline-light {
+      padding: 10px 25px;
+      font-weight: 500;
+      border-radius: 8px;
+      transition: all 0.3s ease;
+    }
+    
+    .btn-outline-light:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(255, 255, 255, 0.2);
+    }
+    
+    .footer {
+      background-color: var(--primary);
+      color: var(--primary-foreground);
+      padding: 30px 0;
+    }
+
+    /* Admin Messages Ticker */
+    .admin-ticker-container {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-bottom: 2px solid var(--primary);
+      overflow: hidden;
+      position: relative;
+      z-index: 10;
+    }
+    
+    .admin-ticker {
+      height: 40px;
+      display: flex;
+      align-items: center;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+    
+    .ticker-content {
+      display: flex;
+      animation: scroll-ticker 30s linear infinite;
+      gap: 100px;
+    }
+    
+    .ticker-item {
+      color: white;
+      font-weight: 500;
+      font-size: 14px;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+      display: inline-block;
+      white-space: nowrap;
+    }
+    
+    @keyframes scroll-ticker {
+      0% { transform: translateX(100%); }
+      100% { transform: translateX(-100%); }
+    }
+    
+    /* Pause animation on hover */
+    .admin-ticker:hover .ticker-content {
+      animation-play-state: paused;
+    }
+
+    /* Footer Styles */
+    .footer-section {
+      background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+      color: white;
+      padding: 60px 0 20px;
+      margin-top: 80px;
+    }
+    
+    .footer-content {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr;
+      gap: 40px;
+      margin-bottom: 40px;
+    }
+    
+    @media (max-width: 992px) {
+      .footer-content {
+        grid-template-columns: 1fr;
+        gap: 30px;
+        text-align: center;
+      }
+    }
+    
+    .footer-info h4 {
+      color: #f8fafc;
+      font-size: 24px;
+      margin-bottom: 16px;
+      font-family: 'Space Grotesk', sans-serif;
+    }
+    
+    .footer-info p {
+      color: #cbd5e1;
+      line-height: 1.6;
+      font-size: 16px;
+    }
+    
+    .footer-social h5,
+    .footer-contact h5 {
+      color: #f8fafc;
+      font-size: 18px;
+      margin-bottom: 20px;
+      font-weight: 600;
+    }
+    
+    .social-links {
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+    
+    @media (max-width: 992px) {
+      .social-links {
+        justify-content: center;
+      }
+    }
+    
+    .social-link {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 45px;
+      height: 45px;
+      border-radius: 50%;
+      color: white;
+      text-decoration: none;
+      transition: all 0.3s ease;
+      font-size: 18px;
+    }
+    
+    .social-link.facebook { background: #1877f2; }
+    .social-link.twitter { background: #1da1f2; }
+    .social-link.instagram { background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); }
+    .social-link.linkedin { background: #0077b5; }
+    .social-link.youtube { background: #ff0000; }
+    
+    .social-link:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+    }
+    
+    .contact-info p {
+      color: #cbd5e1;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    @media (max-width: 992px) {
+      .contact-info p {
+        justify-content: center;
+      }
+    }
+    
+    .contact-info i {
+      color: var(--primary);
+      width: 20px;
+    }
+    
+    .footer-bottom {
+      border-top: 1px solid #475569;
+      padding-top: 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+    
+    @media (max-width: 768px) {
+      .footer-bottom {
+        flex-direction: column;
+        text-align: center;
+      }
+    }
+    
+    .copyright p {
+      color: #94a3b8;
+      margin: 0;
+      font-size: 14px;
+    }
+    
+    .footer-links {
+      display: flex;
+      gap: 25px;
+      flex-wrap: wrap;
+    }
+    
+    @media (max-width: 768px) {
+      .footer-links {
+        justify-content: center;
+      }
+    }
+    
+    .footer-links a {
+      color: #cbd5e1;
+      text-decoration: none;
+      font-size: 14px;
+      transition: color 0.3s ease;
+    }
+    
+    .footer-links a:hover {
+      color: var(--primary);
+    }
+  </style>
+</head>
+<body class="body-bg-blur">
+  <div class="bg-gradient-overlay">
+    <header class="navbar navbar-expand-lg navbar-dark">
+      <div class="container">
+        <a class="navbar-brand" href="#">
+          <i class="fas fa-city me-2"></i>
+          منصة البلاغات المدنية
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav me-auto">
+            <li class="nav-item">
+              <a class="nav-link active" href="#">الرئيسية</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#features">المميزات</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#about">عن المنصة</a>
+            </li>
+          </ul>
+          <div class="d-flex">
+            <a href="login.html" class="btn btn-outline-light me-2">تسجيل الدخول</a>
+            <a href="register.html" class="btn btn-light">إنشاء حساب</a>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <section class="hero-section">
+      <div class="container">
+        <h1 class="hero-title section-title">منصة البلاغات المدنية - Civil Reports Platform</h1>
+        <p class="hero-subtitle section-sub">ساهم في تحسين مدينة خنشلة من خلال الإبلاغ عن المشاكل والمخالفات</p>
+        <div class="d-flex justify-content-center">
+          <a href="register.html" class="btn btn-light btn-lg me-3">إنشاء حساب جديد</a>
+          <a href="login.html" class="btn btn-outline-light btn-lg">تسجيل الدخول</a>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <section id="features" class="py-5">
+    <div class="container">
+      <h2 class="text-center mb-5 section-title">مميزات المنصة</h2>
+      <div class="stats mb-5">
+        <div class="stat-card">
+          <div class="stat-number">١٠٠٠+</div>
+          <div class="stat-label">بلاغ تم معالجته</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">٥٠+</div>
+          <div class="stat-label">مدينة مشاركة</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">٢٤/٧</div>
+          <div class="stat-label">دعم متواصل</div>
+        </div>
+      </div>
+      
+      <div class="row">
+        <div class="col-md-4">
+          <div class="feature-card text-center">
+            <i class="fas fa-map-marker-alt feature-icon"></i>
+            <h3>تحديد الموقع</h3>
+            <p>حدد موقع البلاغ بدقة على الخريطة لتسهيل الوصول إليه</p>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="feature-card text-center">
+            <i class="fas fa-camera feature-icon"></i>
+            <h3>إرفاق الصور</h3>
+            <p>أرفق صوراً توضيحية للمشكلة لتسهيل فهمها وحلها</p>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="feature-card text-center">
+            <i class="fas fa-chart-line feature-icon"></i>
+            <h3>تتبع الحالة</h3>
+            <p>تابع حالة بلاغك والإجراءات المتخذة بشأنه</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="about" class="py-5 bg-light">
+    <div class="container">
+      <div class="row align-items-center">
+        <div class="col-lg-6">
+          <h2 class="section-title">عن المنصة</h2>
+          <p class="lead">منصة البلاغات المدنية هي منصة إلكترونية تهدف إلى تمكين المواطنين من المشاركة في تحسين مدنهم من خلال الإبلاغ عن المشاكل والمخالفات.</p>
+          <p>تعمل المنصة كحلقة وصل بين المواطنين والجهات المختصة، مما يساهم في سرعة الاستجابة وحل المشكلات بكفاءة أكبر.</p>
+          <p>انضم إلينا اليوم وكن جزءاً من التغيير الإيجابي في مدينتك!</p>
+        </div>
+        <div class="col-lg-6">
+          <img src="https://placehold.co/600x400" alt="صورة توضيحية" class="img-fluid rounded shadow">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="container">
+    <div class="cta-section">
+      <h2 class="mb-4 section-title">انضم إلينا اليوم وساهم في تحسين مدينتك</h2>
+      <p class="lead mb-4">سجل الآن للوصول إلى كافة مميزات المنصة والمساهمة في تطوير مجتمعك</p>
+      <a href="register.html" class="btn btn-light btn-lg me-3">إنشاء حساب جديد</a>
+      <a href="login.html" class="btn btn-outline-light btn-lg">تسجيل الدخول</a>
+    </div>
+  </section>
+
+  <footer class="footer-section">
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-info">
+          <h4>نظام البلاغات</h4>
+          <p>منصة متطورة للإبلاغ عن مشاكل البنية التحتية وتتبع حالة الإصلاحات</p>
+        </div>
+        
+        <div class="footer-social">
+          <h5>تابعونا على</h5>
+          <div class="social-links">
+            <a href="#" class="social-link facebook" title="Facebook">
+              <i class="fab fa-facebook-f"></i>
+            </a>
+            <a href="#" class="social-link twitter" title="Twitter">
+              <i class="fab fa-twitter"></i>
+            </a>
+            <a href="#" class="social-link instagram" title="Instagram">
+              <i class="fab fa-instagram"></i>
+            </a>
+            <a href="#" class="social-link linkedin" title="LinkedIn">
+              <i class="fab fa-linkedin-in"></i>
+            </a>
+            <a href="#" class="social-link youtube" title="YouTube">
+              <i class="fab fa-youtube"></i>
+            </a>
+          </div>
+        </div>
+        
+        <div class="footer-contact">
+          <h5>اتصل بنا</h5>
+          <div class="contact-info">
+            <p><i class="fas fa-phone"></i> +213672413137</p>
+            <p><i class="fas fa-envelope"></i> mohamedislemhafidi@gmail.com</p>
+            <p><i class="fas fa-map-marker-alt"></i> خنشلة , خنشلة - الجزائر </p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="footer-bottom">
+        <div class="copyright">
+          <p>&copy; 2025 Hafidi Tech نظام البلاغات. جميع الحقوق محفوظة.</p>
+        </div>
+        <div class="footer-links">
+          <a href="#">سياسة الخصوصية</a>
+          <a href="#">شروط الاستخدام</a>
+          <a href="#">المساعدة</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Bootstrap Bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

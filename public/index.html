@@ -1,0 +1,1407 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>خريطة البلاغات المدنية</title>
+
+  <!-- Bootstrap 5 RTL CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css" rel="stylesheet"/>
+  
+  <!-- Supabase JS -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
+  
+  <!-- Supabase Config -->
+  <script src="supabase-config.js"></script>
+  
+  <!-- Reports Storage -->
+  <script src="reports-storage.js"></script>
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+
+  <style>
+    /* Fixed color variables without dark mode */
+    :root{
+      --background:#ffffff; --foreground:#0f172a; --card:#f8fafc; --card-foreground:#0f172a;
+      --primary:#7c3aed; --primary-foreground:#ffffff; --secondary:#f1f5f9; --secondary-foreground:#0f172a;
+      --muted:#f1f5f9; --muted-foreground:#64748b; --accent:#f1f5f9; --border:#e2e8f0;
+      --input:#f8fafc; --ring:#7c3aed; --blur-overlay: rgba(255,255,255,.35);
+    }
+
+    /* خلفية بصورة + بلور */
+    .body-bg-blur::before{
+      content:""; position:fixed; inset:0; z-index:-1;
+      background:
+        linear-gradient(0deg, rgba(255,255,255,.35), rgba(255,255,255,.35)),
+        url("image.png") center/cover no-repeat;  /* ← عدّل مسار الصورة لو أردت */
+      filter: blur(18px);
+      transform: scale(1.08);
+    }
+
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{
+      font-family:'DM Sans','Space Grotesk',-apple-system,BlinkMacSystemFont,sans-serif;
+      background:var(--background); color:var(--foreground); line-height:1.6;
+    }
+    .container{max-width:1400px; margin:0 auto; padding:0 24px}
+
+    section{padding:48px 0}
+    .section-title{font-family:'Space Grotesk',sans-serif; font-weight:700; margin-bottom:12px}
+    .section-sub{color:var(--muted-foreground); margin-bottom:24px}
+    :target::before{ content:""; display:block; height:80px; margin-top:-80px }
+
+    /* إحصائيات و بطاقات عامة */
+    .stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:20px; margin:16px 0 32px}
+    .stat-card{background:var(--card); border:1px solid var(--border); border-radius:16px; padding:24px; text-align:center; position:relative; overflow:hidden; transition:.3s}
+    .stat-card::before{content:''; position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(90deg,var(--primary),#a855f7)}
+    .stat-card:hover{transform:translateY(-4px); box-shadow:0 8px 32px rgba(139,92,246,.15); border-color:var(--primary)}
+    .stat-number{font-size:42px; font-weight:700; color:var(--primary); margin-bottom:8px; font-family:'Space Grotesk',sans-serif}
+    .stat-label{color:var(--muted-foreground); font-size:13px; letter-spacing:.5px}
+
+    /* Admin Messages Ticker */
+    .admin-ticker-container {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-bottom: 2px solid var(--primary);
+      overflow: hidden;
+      position: relative;
+      z-index: 10;
+    }
+    
+    .admin-ticker {
+      height: 40px;
+      display: flex;
+      align-items: center;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+    
+    .ticker-content {
+      display: flex;
+      animation: scroll-ticker 30s linear infinite;
+      gap: 100px;
+    }
+    
+    .ticker-item {
+      color: white;
+      font-weight: 500;
+      font-size: 14px;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+      display: inline-block;
+      white-space: nowrap;
+    }
+    
+    @keyframes scroll-ticker {
+      0% { transform: translateX(100%); }
+      100% { transform: translateX(-100%); }
+    }
+    
+    /* Pause animation on hover */
+    .admin-ticker:hover .ticker-content {
+      animation-play-state: paused;
+    }
+
+    /* Footer Styles */
+    .footer-section {
+      background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+      color: white;
+      padding: 60px 0 20px;
+      margin-top: 80px;
+    }
+    
+    .footer-content {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr;
+      gap: 40px;
+      margin-bottom: 40px;
+    }
+    
+    @media (max-width: 992px) {
+      .footer-content {
+        grid-template-columns: 1fr;
+        gap: 30px;
+        text-align: center;
+      }
+    }
+    
+    .footer-info h4 {
+      color: #f8fafc;
+      font-size: 24px;
+      margin-bottom: 16px;
+      font-family: 'Space Grotesk', sans-serif;
+    }
+    
+    .footer-info p {
+      color: #cbd5e1;
+      line-height: 1.6;
+      font-size: 16px;
+    }
+    
+    .footer-social h5,
+    .footer-contact h5 {
+      color: #f8fafc;
+      font-size: 18px;
+      margin-bottom: 20px;
+      font-weight: 600;
+    }
+    
+    .social-links {
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+    
+    @media (max-width: 992px) {
+      .social-links {
+        justify-content: center;
+      }
+    }
+    
+    .social-link {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 45px;
+      height: 45px;
+      border-radius: 50%;
+      color: white;
+      text-decoration: none;
+      transition: all 0.3s ease;
+      font-size: 18px;
+    }
+    
+    .social-link.facebook { background: #1877f2; }
+    .social-link.twitter { background: #1da1f2; }
+    .social-link.instagram { background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); }
+    .social-link.linkedin { background: #0077b5; }
+    .social-link.youtube { background: #ff0000; }
+    
+    .social-link:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+    }
+    
+    .contact-info p {
+      color: #cbd5e1;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    @media (max-width: 992px) {
+      .contact-info p {
+        justify-content: center;
+      }
+    }
+    
+    .contact-info i {
+      color: var(--primary);
+      width: 20px;
+    }
+    
+    .footer-bottom {
+      border-top: 1px solid #475569;
+      padding-top: 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+    
+    @media (max-width: 768px) {
+      .footer-bottom {
+        flex-direction: column;
+        text-align: center;
+      }
+    }
+    
+    .copyright p {
+      color: #94a3b8;
+      margin: 0;
+      font-size: 14px;
+    }
+    
+    .footer-links {
+      display: flex;
+      gap: 25px;
+      flex-wrap: wrap;
+    }
+    
+    @media (max-width: 768px) {
+      .footer-links {
+        justify-content: center;
+      }
+    }
+    
+    .footer-links a {
+      color: #cbd5e1;
+      text-decoration: none;
+      font-size: 14px;
+      transition: color 0.3s ease;
+    }
+    
+    .footer-links a:hover {
+      color: var(--primary);
+    }
+
+    .card{background:var(--card); border:1px solid var(--border); border-radius:16px; padding:24px; margin-bottom:24px; box-shadow:0 4px 16px rgba(0,0,0,.08); transition:.3s}
+    .card:hover{box-shadow:0 8px 32px rgba(139,92,246,.12)}
+    .btn.primary{background:linear-gradient(135deg,var(--primary),#a855f7); color:#fff; border:none}
+    .btn.primary:hover{opacity:.95; transform:translateY(-1px)}
+    .admin-only{display:none}
+    .admin-mode .admin-only{display:block}
+
+    .two-col{display:grid; grid-template-columns:1fr 1fr; gap:24px; align-items:start}
+    @media (max-width:992px){ .two-col{grid-template-columns:1fr} }
+
+    /* نموذج البلاغات */
+    #reportForm{display:grid; gap:16px}
+    #reportForm .field{display:flex; flex-direction:column; gap:8px}
+    #reportForm label{font-weight:600; color:var(--foreground); margin:0}
+    #reportForm input,#reportForm textarea,#reportForm select{width:100%}
+    #reportForm textarea{min-height:120px; resize:vertical}
+    #reportForm .row-2{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+    @media (max-width: 768px){ #reportForm .row-2{grid-template-columns:1fr} }
+
+    /* رافع الصور */
+    .uploader{display:grid; grid-template-columns:1fr 1fr; gap:16px}
+    @media (max-width: 768px){ .uploader{grid-template-columns:1fr} }
+    .upload-box{border:2px dashed var(--border); border-radius:12px; padding:20px; text-align:center; background:var(--muted); transition:.3s}
+    .upload-box:hover{border-color:var(--primary); background:var(--accent)}
+    .upload-box input[type="file"]{display:none}
+    .upload-box label{cursor:pointer; color:var(--primary); font-weight:600; display:block; padding:12px; border-radius:8px}
+    .preview{margin-top:10px}
+    .preview img{max-width:100%; height:auto; border-radius:8px}
+
+    /* شبكة عرض الصور (مثل الأمثلة المرسلة) */
+    .gallery-grid{
+      display:grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap:28px;
+    }
+    @media (max-width: 992px){
+      .gallery-grid{ grid-template-columns:1fr }
+    }
+    @media (min-width: 1400px){
+      .gallery-grid{ grid-template-columns: repeat(3, minmax(0, 1fr)) }
+    }
+    .gallery-item{
+      position:relative; overflow:hidden; border-radius:16px;
+      background:var(--card); box-shadow:0 10px 24px rgba(0,0,0,.12);
+      transition:transform .25s ease, box-shadow .25s ease;
+    }
+    .gallery-item:hover{ transform:translateY(-4px); box-shadow:0 14px 32px rgba(0,0,0,.18) }
+    .gallery-img{ width:100%; height:280px; object-fit:cover; display:block }
+    .gallery-actions{
+      position:absolute; top:10px; left:10px; display:none; gap:8px;
+    }
+    .admin-mode .gallery-actions{ display:flex }
+  </style>
+</head>
+
+<body class="body-bg-blur">
+
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-light bg-light sticky-top">
+    <div class="container">
+      <a class="navbar-brand fw-bold" href="#">النقاط السوداء في مدينة خنشلة</a>
+
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
+              aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="تبديل القائمة">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          <li class="nav-item"><a class="nav-link" href="#reports">البلاغات</a></li>
+          <li class="nav-item"><a class="nav-link" href="#photos">عرض الصور</a></li>
+          <li class="nav-item"><a class="nav-link" href="#support">الدعم</a></li>
+        </ul>
+
+        <div class="d-flex">
+          <!-- أزرار تسجيل الدخول/التسجيل -->
+          <a id="loginBtn" href="login.html" class="btn btn-sm btn-outline-primary me-2">تسجيل الدخول</a>
+          <a id="registerBtn" href="register.html" class="btn btn-sm btn-outline-success me-2">إنشاء حساب</a>
+         
+          <!-- زر تسجيل الخروج -->
+          <button id="logoutBtn" class="btn btn-sm btn-danger" type="button" onclick="logout()">تسجيل الخروج</button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Admin Messages Ticker -->
+  <div class="admin-ticker-container">
+    <div class="admin-ticker">
+      <div class="ticker-content" id="adminTicker">
+        <span class="ticker-item">الإدارة: مرحباً بكم في منصة البلاغات المدنية</span>
+        <span class="ticker-item">الإدارة: يرجى التأكد من دقة المعلومات قبل إرسال البلاغ</span>
+        <span class="ticker-item">الإدارة: نعمل على تحسين الخدمات باستمرار</span>
+      </div>
+    </div>
+  </div>
+
+  <main>
+
+    <!-- SECTION: البلاغات -->
+    <section id="reports">
+      <div class="container">
+        <h2 class="section-title">البلاغات</h2>
+        <p class="section-sub">أرسل بلاغًا جديدًا وتابع حالة البلاغات المسجّلة.</p>
+
+        <div class="stats">
+          <div class="stat-card"><div class="stat-number" id="total-reports">0</div><div class="stat-label">إجمالي البلاغات</div></div>
+          <div class="stat-card"><div class="stat-number" id="new-reports">0</div><div class="stat-label">جديدة</div></div>
+          <div class="stat-card"><div class="stat-number" id="in-progress-reports">0</div><div class="stat-label">قيد المعالجة</div></div>
+          <div class="stat-card"><div class="stat-number" id="resolved-reports">0</div><div class="stat-label">تم الحل</div></div>
+        </div>
+
+        <div class="two-col">
+          <!-- نموذج البلاغ -->
+          <div class="form-section">
+            <div class="card">
+              <h3 class="mb-3">إضافة بلاغ جديد</h3>
+
+              <form id="reportForm">
+                <div class="field">
+                  <label for="title">العنوان</label>
+                  <input class="form-control" type="text" id="title" required placeholder="أدخل عنوان البلاغ">
+                </div>
+
+                <div class="field">
+                  <label for="description">الوصف</label>
+                  <textarea class="form-control" id="description" maxlength="500" required placeholder="وصف تفصيلي للمشكلة"></textarea>
+                </div>
+
+                <div class="field">
+                  <label for="district">اسم الحي</label>
+                  <input class="form-control" type="text" id="district" required placeholder="اسم الحي أو المنطقة">
+                </div>
+
+                <div class="row-2">
+                  <div class="field">
+                    <label for="commune">البلدية</label>
+                    <select class="form-select" id="commune" required>
+                      <option value="">اختر البلدية</option>
+                      <option>عين الطويلة</option><option>بابار</option><option>بغاي</option><option>بوحمامة</option><option>ششار</option><option>شلية</option>
+                      <option>جلال</option><option>الحامة</option><option>المحمل</option><option>الولجة</option><option>انسيغة</option><option>قايس</option>
+                      <option>خنشلة</option><option>خيران</option><option>لمصارة</option><option>متوسة</option><option>أولاد رشاش</option><option>الرميلة</option>
+                      <option>طامزة</option><option>تاوزيانت</option><option>يابوس</option>
+                    </select>
+                  </div>
+
+                  <div class="field">
+                    <label for="category">الفئة</label>
+                    <select class="form-select" id="category">
+                      <option value="lighting">💡 إنارة</option>
+                      <option value="pothole">🕳️ حفر</option>
+                      <option value="waste">🗑️ نفايات</option>
+                      <option value="water">💧 مياه</option>
+                      <option value="works">🚧 أشغال</option>
+                      <option value="other">📋 أخرى</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="row-2 admin-only">
+                  <div class="field">
+                    <label for="priority">الأولوية</label>
+                    <select class="form-select" id="priority">
+                      <option value="low">منخفضة</option>
+                      <option value="medium" selected>متوسطة</option>
+                      <option value="high">عالية</option>
+                      <option value="urgent">عاجلة</option>
+                    </select>
+                  </div>
+
+                  <div class="field">
+                    <label for="internalNote">ملاحظة داخلية (لا تظهر للعامة)</label>
+                    <textarea class="form-control" id="internalNote" placeholder="تفاصيل تقنية، تواصل مع مصلحة كذا..."></textarea>
+                  </div>
+                </div>
+
+                <div class="uploader my-2">
+                  <div class="upload-box">
+                    <label for="before">📷 صورة قبل الأشغال</label>
+                    <input type="file" id="before" accept="image/*">
+                    <div class="preview" id="prev-before"></div>
+                  </div>
+                  <div class="upload-box">
+                    <label for="after">📷 صورة بعد الأشغال</label>
+                    <input type="file" id="after" accept="image/*">
+                    <div class="preview" id="prev-after"></div>
+                  </div>
+                </div>
+
+                <button class="btn primary" type="submit">📤 إرسال البلاغ</button>
+              </form>
+            </div>
+          </div>
+
+          <!-- قائمة البلاغات (عينات) -->
+          <div class="gallery-section">
+            <div class="card">
+              <h3 class="mb-3">البلاغات - Les Rapports</h3>
+
+              <div class="row g-2 mb-3">
+                <div class="col-12 col-md-4">
+                  <select id="filterCategory" class="form-select">
+                    <option value="">جميع الفئات</option>
+                    <option value="lighting">💡 إنارة</option>
+                    <option value="pothole">🕳️ حفر</option>
+                    <option value="waste">🗑️ نفايات</option>
+                    <option value="water">💧 مياه</option>
+                    <option value="works">🚧 أشغال</option>
+                    <option value="other">📋 أخرى</option>
+                  </select>
+                </div>
+                <div class="col-12 col-md-4">
+                  <select id="filterStatus" class="form-select">
+                    <option value="">جميع الحالات</option>
+                    <option value="new">جديدة</option>
+                    <option value="in-progress">قيد المعالجة</option>
+                    <option value="resolved">تم الحل</option>
+                  </select>
+                </div>
+                <div class="col-12 col-md-4">
+                  <select id="filterCommune" class="form-select">
+                    <option value="">جميع البلديات</option>
+                    <option>خنشلة</option><option>بابار</option><option>بغاي</option>
+                  </select>
+                </div>
+              </div>
+
+              <div id="reportsGallery" style="display:grid;gap:16px;max-height:600px;overflow-y:auto;">
+                <!-- بطاقات عينة -->
+                <div class="report-card" style="background:var(--muted);border:1px solid var(--border);border-radius:12px;padding:16px;">
+                  <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div>
+                      <h4 class="mb-1" style="font-size:16px;">إصلاح حفرة في الطريق الرئيسي</h4>
+                      <div style="display:flex;gap:8px;font-size:12px;color:var(--muted-foreground);">
+                        <span>🕳️</span><span>الحي المدينة</span><span>•</span><span>بلدية الحامة</span>
+                      </div>
+                    </div>
+                    <span class="badge" style="background:#ef4444;">عالية</span>
+                  </div>
+                  <p class="mb-2" style="color:var(--muted-foreground);">حفرة كبيرة في الطريق الرئيسي تسبب خطر على المرور ويحتاج إصلاح عاجل</p>
+                  <div class="d-flex justify-content-between" style="font-size:12px;">
+                    <span style="color:var(--muted-foreground);">التاريخ: 15-01-2024</span>
+                    <span class="badge" style="background:var(--primary);">جديدة</span>
+                  </div>
+                </div>
+
+                <div class="report-card" style="background:var(--muted);border:1px solid var(--border);border-radius:12px;padding:16px;">
+                  <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div>
+                      <h4 class="mb-1" style="font-size:16px;">عطل في الإنارة العامة</h4>
+                      <div style="display:flex;gap:8px;font-size:12px;color:var(--muted-foreground);">
+                        <span>💡</span><span>حي المعالجة</span><span>•</span><span>بلدية بابار</span>
+                      </div>
+                    </div>
+                    <span class="badge" style="background:#f59e0b;">متوسطة</span>
+                  </div>
+                  <p class="mb-2" style="color:var(--muted-foreground);">عمود الإنارة لا يعمل منذ أسبوع مما يسبب ظلام في المنطقة</p>
+                  <div class="d-flex justify-content-between" style="font-size:12px;">
+                    <span style="color:var(--muted-foreground);">التاريخ: 14-01-2024</span>
+                    <span class="badge" style="background:#f59e0b;">قيد المعالجة</span>
+                  </div>
+                </div>
+
+              </div> <!-- /reportsGallery -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION: عرض الصور -->
+    <section id="photos">
+      <div class="container">
+        <h2 class="section-title">عرض الصور</h2>
+        <p class="section-sub">ارفع صور قبل/بعد الأشغال واستعرضها في المعرض.</p>
+
+        <!-- رفع الصور: يظهر للأدمن فقط -->
+        <div class="card admin-only">
+          <h3 class="mb-3">رفع صور</h3>
+          <div class="uploader">
+            <div class="upload-box" id="dropZone">
+              <strong>أفلت الصور هنا</strong>
+              <div class="text-muted" style="font-size:13px;">يدعم السحب والإفلات</div>
+            </div>
+            <div class="upload-box">
+              <label>📷 اختر صورًا
+                <input type="file" id="imageUpload" accept="image/*" multiple>
+              </label>
+              <div class="text-muted" style="font-size:13px;">يمكنك سحب الصور وإفلاتها هنا أيضًا.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- شبكة العرض -->
+        <div class="card">
+          <div id="photoGrid" class="gallery-grid">
+            <!-- يتم توليد العناصر هنا -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION: الدعم -->
+    <section id="support">
+      <div class="container">
+        <h2 class="section-title">الدعم</h2>
+        <p class="section-sub">تواصل معنا أو اطّلع على الأسئلة الشائعة.</p>
+
+        <div class="row g-3">
+          <div class="col-12 col-lg-6">
+            <div class="card">
+              <h3>اتصل بنا</h3>
+              <form id="supportForm">
+                <div class="mb-2">
+                  <label for="sName" class="form-label">الاسم</label>
+                  <input class="form-control" type="text" id="sName" required>
+                </div>
+                <div class="mb-2">
+                  <label for="sEmail" class="form-label">البريد الإلكتروني</label>
+                  <input class="form-control" type="email" id="sEmail" required>
+                </div>
+                <div class="mb-2">
+                  <label for="sMsg" class="form-label">الرسالة</label>
+                  <textarea class="form-control" id="sMsg" rows="4" required></textarea>
+                </div>
+                <button class="btn primary" type="submit">إرسال</button>
+              </form>
+            </div>
+          </div>
+
+          <div class="col-12 col-lg-6">
+            <div class="card">
+              <h3>الأسئلة الشائعة</h3>
+              <div class="accordion" id="faq">
+                <div class="accordion-item">
+                  <h2 class="accordion-header" id="q1">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#a1">
+                      كيف أرسل بلاغًا جديدًا؟
+                    </button>
+                  </h2>
+                  <div id="a1" class="accordion-collapse collapse" data-bs-parent="#faq">
+                    <div class="accordion-body">من قسم البلاغات، املأ الحقول المطلوبة ثم اضغط "إرسال البلاغ".</div>
+                  </div>
+                </div>
+                <div class="accordion-item">
+                  <h2 class="accordion-header" id="q2">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#a2">
+                      كيف أتابع حالة البلاغ؟
+                    </button>
+                  </h2>
+                  <div id="a2" class="accordion-collapse collapse" data-bs-parent="#faq">
+                    <div class="accordion-body">ستظهر الحالة بجانب كل بطاقة بلاغ ضمن قسم البلاغات.</div>
+                  </div>
+                </div>
+                <div class="accordion-item">
+                  <h2 class="accordion-header" id="q3">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#a3">
+                      هل يمكن رفع أكثر من صورة؟
+                    </button>
+                  </h2>
+                  <div id="a3" class="accordion-collapse collapse" data-bs-parent="#faq">
+                    <div class="accordion-body">نعم، من قسم "عرض الصور" يمكنك اختيار عدة صور دفعة واحدة.</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div> <!-- /row -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- نافذة عرض الصور -->
+  <div id="imageModal" class="modal" style="display:none;position:fixed;z-index:1000;left:0;top:0;width:100%;height:100%;background-color:rgba(0,0,0,0.8);">
+    <div class="modal-content" style="position:relative;margin:5% auto;padding:20px;width:90%;max-width:800px;background:white;border-radius:12px;">
+      <span class="close" style="position:absolute;top:10px;right:20px;font-size:28px;font-weight:bold;cursor:pointer;">&times;</span>
+      <div id="modalContent">
+        <h3 id="modalTitle" style="margin-bottom:20px;"></h3>
+        <div id="modalImages" style="display:grid;gap:20px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer Section -->
+  <footer class="footer-section">
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-info">
+          <h4>نظام البلاغات</h4>
+          <p>منصة متطورة للإبلاغ عن مشاكل البنية التحتية وتتبع حالة الإصلاحات</p>
+        </div>
+        
+        <div class="footer-social">
+          <h5>تابعونا على</h5>
+          <div class="social-links">
+            <a href="#" class="social-link facebook" title="Facebook">
+              <i class="fab fa-facebook-f"></i>
+            </a>
+            <a href="#" class="social-link twitter" title="Twitter">
+              <i class="fab fa-twitter"></i>
+            </a>
+            <a href="#" class="social-link instagram" title="Instagram">
+              <i class="fab fa-instagram"></i>
+            </a>
+            <a href="#" class="social-link linkedin" title="LinkedIn">
+              <i class="fab fa-linkedin-in"></i>
+            </a>
+            <a href="#" class="social-link youtube" title="YouTube">
+              <i class="fab fa-youtube"></i>
+            </a>
+          </div>
+        </div>
+        
+        <div class="footer-contact">
+          <h5>اتصل بنا</h5>
+          <div class="contact-info">
+            <p><i class="fas fa-phone"></i> +213672413137</p>
+            <p><i class="fas fa-envelope"></i> medislemhafidi@gmail.com</p>
+            <p><i class="fas fa-map-marker-alt"></i> خنشلة , خنشلة - الجزائر</p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="footer-bottom">
+        <div class="copyright">
+          <p>&copy; 2025 نظام البلاغات. جميع الحقوق محفوظة.</p>
+        </div>
+        <div class="footer-links">
+          <a href="#">سياسة الخصوصية</a>
+          <a href="#">شروط الاستخدام</a>
+          <a href="#">المساعدة</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Bootstrap Bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
+  <script src="supabase-config.js"></script>
+
+  <script>
+    // ========= إعدادات عامة =========
+    const ADMIN_PASS = 'admin123'; // ← غيّر كلمة مرور الإدارة هنا
+    const GALLERY_KEY = 'galleryImages';
+    const LOGIN_STATUS_KEY = 'loginStatus';
+
+    // Check if user is authenticated, redirect to landing page if not
+    function checkAuth() {
+      const user = localStorage.getItem('user');
+      if (!user) {
+        window.location.href = 'landing.html';
+        return false;
+      }
+      return true;
+    }
+
+    // Redirect non-authenticated users immediately
+    if (!checkAuth()) {
+      // This prevents the rest of the script from running if redirected
+      throw new Error('Redirecting to landing page');
+    }
+
+    // Supabase initialization
+     const SUPABASE_URL = window.supabaseConfig.url;
+     const SUPABASE_KEY = window.supabaseConfig.key;
+     
+     // Initialize Supabase client
+     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+     
+     // Use the initSupabase function from supabaseConfig
+     function initSupabase() {
+       return window.supabaseConfig.initSupabase();
+     }
+
+    // Theme function removed as dark mode has been removed
+
+    function toggleAdmin(){
+      const isAdmin = document.body.classList.contains('admin-mode');
+      if(!isAdmin){
+        const pass = prompt('أدخل كلمة مرور الإدارة:');
+        if(pass !== ADMIN_PASS){ alert('كلمة المرور غير صحيحة'); return; }
+        // تسجيل الدخول
+        localStorage.setItem(LOGIN_STATUS_KEY, 'true');
+        document.getElementById('logoutBtn').style.display = 'block';
+      } else {
+        // تسجيل الخروج عند إلغاء وضع الإدارة
+        localStorage.removeItem('adminMode');
+        document.body.classList.remove('admin-mode');
+        window.location.href = 'landing.html';
+        logout();
+        return;
+      }
+      document.body.classList.toggle('admin-mode');
+      localStorage.setItem('adminMode', document.body.classList.contains('admin-mode'));
+    }
+    
+    async function logout() {
+      try {
+        // تسجيل الخروج من Supabase
+        const { error } = await supabaseClient.auth.signOut();
+        if (error) throw error;
+        
+        // إزالة حالة تسجيل الدخول
+        localStorage.removeItem(LOGIN_STATUS_KEY);
+        localStorage.removeItem('adminMode');
+        localStorage.removeItem('userEmail');
+        localStorage.removeItem('userName');
+        localStorage.removeItem('userId');
+        localStorage.removeItem('user'); // Remove user session data
+        
+        document.body.classList.remove('admin-mode');
+        document.getElementById('logoutBtn').style.display = 'none';
+        document.getElementById('loginBtn').style.display = 'block';
+        document.getElementById('registerBtn').style.display = 'block';
+        
+        alert('تم تسجيل الخروج بنجاح');
+        
+        // Redirect to landing page after logout
+        window.location.href = 'landing.html';
+      } catch (error) {
+        console.error('خطأ في تسجيل الخروج:', error.message);
+        alert('حدث خطأ أثناء تسجيل الخروج');
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', async ()=>{
+      // وضع الإدارة محفوظ
+      if(localStorage.getItem('adminMode')==='true'){ document.body.classList.add('admin-mode'); }
+      
+      // التحقق من حالة تسجيل الدخول
+      let isLoggedIn = false;
+      
+      // التحقق من Supabase
+      try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (user) {
+          isLoggedIn = true;
+          localStorage.setItem(LOGIN_STATUS_KEY, 'true');
+          localStorage.setItem('userEmail', user.email);
+          localStorage.setItem('userId', user.id);
+          
+          // محاولة الحصول على اسم المستخدم من البيانات
+          try {
+            const { data: userData, error: userError } = await supabaseClient
+              .from('profiles')
+              .select('full_name')
+              .eq('id', user.id)
+              .single();
+              
+            if (!userError && userData && userData.full_name) {
+              localStorage.setItem('userName', userData.full_name);
+            }
+          } catch (profileError) {
+            console.error('خطأ في جلب بيانات المستخدم:', profileError);
+          }
+        }
+      } catch (error) {
+        console.error('خطأ في التحقق من المستخدم:', error);
+      }
+      
+      // التحقق من localStorage كنسخة احتياطية
+      if (localStorage.getItem(LOGIN_STATUS_KEY) === 'true') {
+        isLoggedIn = true;
+      }
+      
+      // تحديث واجهة المستخدم بناءً على حالة تسجيل الدخول
+      if (isLoggedIn) {
+        document.getElementById('logoutBtn').style.display = 'block';
+        document.getElementById('loginBtn').style.display = 'none';
+        document.getElementById('registerBtn').style.display = 'none';
+      } else {
+        document.getElementById('logoutBtn').style.display = 'none';
+        document.getElementById('loginBtn').style.display = 'block';
+        document.getElementById('registerBtn').style.display = 'block';
+      }
+
+      // تأثير hover لبطاقات البلاغات
+      document.querySelectorAll('.report-card').forEach(card=>{
+        card.addEventListener('mouseenter',function(){ this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 24px rgba(139,92,246,.15)'; this.style.borderColor='var(--primary)'; });
+        card.addEventListener('mouseleave',function(){ this.style.transform='translateY(0)'; this.style.boxShadow='none'; this.style.borderColor='var(--border)'; });
+      });
+
+      // عرض الصور المحفوظة
+      renderGallery();
+    });
+
+    // ========= رفع الصور (للأدمن فقط) =========
+    const imageUpload = document.getElementById('imageUpload');
+    const dropZone = document.getElementById('dropZone');
+
+    function handleFiles(files){
+      Array.from(files).forEach(file=>{
+        if(!file.type.startsWith('image/')) return;
+        const reader = new FileReader();
+        reader.onload = (ev)=> saveImage(ev.target.result);
+        reader.readAsDataURL(file);
+      });
+    }
+    function saveImage(dataUrl){
+      const arr = JSON.parse(localStorage.getItem(GALLERY_KEY) || '[]');
+      arr.unshift({src:dataUrl, ts: Date.now()}); // أحدث صورة في الأعلى
+      localStorage.setItem(GALLERY_KEY, JSON.stringify(arr));
+      renderGallery();
+    }
+
+    if(imageUpload){
+      imageUpload.addEventListener('change', (e)=> handleFiles(e.target.files));
+    }
+    if(dropZone){
+      dropZone.addEventListener('dragover', (e)=>{ e.preventDefault(); dropZone.classList.add('dragover'); });
+      dropZone.addEventListener('dragleave', ()=> dropZone.classList.remove('dragover'));
+      dropZone.addEventListener('drop', (e)=>{
+        e.preventDefault(); dropZone.classList.remove('dragover');
+        handleFiles(e.dataTransfer.files);
+      });
+    }
+
+    // ========= شبكة العرض =========
+    function renderGallery(){
+      const grid = document.getElementById('photoGrid');
+      if(!grid) return;
+      const arr = JSON.parse(localStorage.getItem(GALLERY_KEY) || '[]');
+      grid.innerHTML = '';
+
+      if(arr.length === 0){
+        grid.innerHTML = `<div class="text-muted">لا توجد صور بعد. فعّل وضع الإدارة لرفع صور.</div>`;
+        return;
+      }
+
+      arr.forEach((item, idx)=>{
+        const el = document.createElement('div');
+        el.className = 'gallery-item';
+        el.innerHTML = `
+          <img class="gallery-img" src="${item.src}" alt="photo-${idx}">
+          <div class="gallery-actions admin-only">
+            <button class="btn btn-sm btn-danger" data-index="${idx}">حذف</button>
+          </div>
+        `;
+        grid.appendChild(el);
+      });
+
+      // أزرار الحذف (تظهر في وضع الإدارة فقط)
+      grid.querySelectorAll('.gallery-actions .btn-danger').forEach(btn=>{
+        btn.addEventListener('click', function(){
+          const i = +this.getAttribute('data-index');
+          const arr = JSON.parse(localStorage.getItem(GALLERY_KEY) || '[]');
+          arr.splice(i,1);
+          localStorage.setItem(GALLERY_KEY, JSON.stringify(arr));
+          renderGallery();
+        });
+      });
+    }
+
+    // ========= إرسال نموذج البلاغ + معاينة قبل/بعد =========
+    // وظيفة لإضافة بلاغ جديد إلى معرض البلاغات
+    function addReportToGallery(data, prepend = true) {
+      const gallery = document.getElementById('reportsGallery');
+      if (!gallery) return;
+      
+      // تحويل فئة البلاغ إلى رمز
+      let categoryIcon = '📋';
+      switch(data.category) {
+        case 'lighting': categoryIcon = '💡'; break;
+        case 'pothole': categoryIcon = '🕳️'; break;
+        case 'waste': categoryIcon = '🗑️'; break;
+        case 'water': categoryIcon = '💧'; break;
+        case 'works': categoryIcon = '🚧'; break;
+      }
+      
+      // تحويل الأولوية إلى لون
+      let priorityColor = '#f59e0b'; // متوسطة
+      switch(data.priority) {
+        case 'low': priorityColor = '#10b981'; break;
+        case 'high': priorityColor = '#ef4444'; break;
+        case 'urgent': priorityColor = '#7c3aed'; break;
+      }
+      
+      // تنسيق التاريخ
+      const date = data.created_at ? new Date(data.created_at) : new Date();
+      const formattedDate = `${date.getDate()}-${date.getMonth()+1}-${date.getFullYear()}`;
+      
+      // تحديد حالة البلاغ
+      const status = data.status || 'new';
+      let statusText = 'جديدة';
+      let statusColor = 'var(--primary)';
+      
+      if (status === 'in_progress') {
+        statusText = 'قيد المعالجة';
+        statusColor = '#f59e0b';
+      } else if (status === 'resolved') {
+        statusText = 'تم الحل';
+        statusColor = '#10b981';
+      } else if (status === 'resolved_by_official') {
+        statusText = 'تم الحل من قبل المسؤول';
+        statusColor = '#059669';
+      }
+      
+      // إنشاء عنصر البلاغ الجديد
+      const reportCard = document.createElement('div');
+      reportCard.className = 'report-card';
+      reportCard.dataset.id = data.id || '';
+      reportCard.style = 'background:var(--muted);border:1px solid var(--border);border-radius:12px;padding:16px;';
+      
+      // تحديد نص الأولوية
+      let priorityText = 'متوسطة';
+      if (data.priority === 'low') priorityText = 'منخفضة';
+      if (data.priority === 'high') priorityText = 'عالية';
+      if (data.priority === 'urgent') priorityText = 'عاجلة';
+      
+      reportCard.innerHTML = `
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <div>
+            <h4 class="mb-1" style="font-size:16px;">${data.title}</h4>
+            <div style="display:flex;gap:8px;font-size:12px;color:var(--muted-foreground);">
+              <span>${categoryIcon}</span><span>${data.district}</span><span>•</span><span>بلدية ${data.commune}</span>
+            </div>
+          </div>
+          <span class="badge" style="background:${priorityColor};">${priorityText}</span>
+        </div>
+        <p class="mb-2" style="color:var(--muted-foreground);">${data.description}</p>
+        ${data.hasImages ? '<div class="mb-2"><small style="color:var(--primary);cursor:pointer;">📷 انقر لعرض الصور</small></div>' : ''}
+        <div class="d-flex justify-content-between align-items-center" style="font-size:12px;">
+          <span style="color:var(--muted-foreground);">التاريخ: ${formattedDate}</span>
+          <span class="badge" style="background:${statusColor};">${statusText}</span>
+        </div>
+      `;
+      
+      // إضافة مستمع النقر لعرض الصور
+      if (data.hasImages) {
+        reportCard.style.cursor = 'pointer';
+        reportCard.addEventListener('click', () => {
+          showImageModal(data);
+        });
+      }
+      
+      // إضافة البلاغ الجديد في بداية أو نهاية المعرض
+      if (prepend) {
+        gallery.insertBefore(reportCard, gallery.firstChild);
+      } else {
+        gallery.appendChild(reportCard);
+      }
+      
+      return reportCard;
+    }
+    
+    // وظيفة مساعدة لتحويل الملف إلى Base64
+    function fileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+    
+    // وظيفة لتحميل البلاغات من التخزين المحلي
+    async function loadReports() {
+      try {
+        console.log('بدء تحميل البلاغات من التخزين المحلي');
+        
+        // تفريغ معرض البلاغات
+        const gallery = document.getElementById('reportsGallery');
+        if (gallery) {
+          gallery.innerHTML = '<div class="text-center p-4">جاري تحميل البلاغات...</div>';
+        }
+        
+        // تحميل البلاغات من التخزين المحلي
+        const storedReports = window.reportsStorage.loadReports();
+        console.log(`تم تحميل ${storedReports.length} بلاغ من التخزين المحلي`);
+        
+        // إضافة بيانات تجريبية إذا لم توجد بلاغات محفوظة
+        let allReports = [...storedReports];
+        
+        if (storedReports.length === 0) {
+          console.log('لا توجد بلاغات محفوظة، إضافة بيانات تجريبية...');
+          
+          // بيانات تجريبية للاختبار
+          const mockReports = [
+            { 
+              id: 'demo_1', 
+              title: 'إصلاح حفرة في الطريق الرئيسي', 
+              description: 'حفرة كبيرة في الطريق الرئيسي تسبب خطر على المرور ويحتاج إصلاح عاجل',
+              district: 'الحي المدينة',
+              commune: 'الحامة',
+              category: 'pothole',
+              priority: 'high',
+              status: 'new',
+              created_at: '2024-01-15T10:30:00Z'
+            },
+            { 
+              id: 'demo_2', 
+              title: 'عطل في الإنارة العامة', 
+              description: 'عمود الإنارة لا يعمل منذ أسبوع مما يسبب ظلام في المنطقة',
+              district: 'حي المعالجة',
+              commune: 'بابار',
+              category: 'lighting',
+              priority: 'medium',
+              status: 'in_progress',
+              created_at: '2024-01-14T08:15:00Z'
+            },
+            { 
+              id: 'demo_3', 
+              title: 'تسرب مياه في الشارع', 
+              description: 'تسرب مياه كبير في شارع الاستقلال يسبب تجمع المياه',
+              district: 'وسط المدينة',
+              commune: 'خنشلة',
+              category: 'water',
+              priority: 'urgent',
+              status: 'resolved',
+              created_at: '2024-01-10T14:20:00Z'
+            }
+          ];
+          
+          allReports = mockReports;
+        }
+        
+        // تفريغ المعرض قبل إضافة البلاغات
+        if (gallery) {
+          gallery.innerHTML = '';
+        }
+        
+        console.log(`تم تحضير ${allReports.length} بلاغ للعرض`);
+        
+        // إضافة البلاغات إلى المعرض
+        if (allReports.length > 0) {
+          allReports.forEach(report => {
+            addReportToGallery(report, false);
+          });
+          
+          // تحديث الإحصائيات
+          updateStats(allReports);
+          
+          console.log('تم عرض البلاغات بنجاح');
+        } else {
+          console.log('لا توجد بلاغات لعرضها');
+          if (gallery) {
+            gallery.innerHTML = '<div class="text-center p-4">لا توجد بلاغات</div>';
+          }
+        }
+      } catch (err) {
+        console.error('Error in loadReports:', err);
+        const gallery = document.getElementById('reportsGallery');
+        if (gallery) {
+          gallery.innerHTML = `<div class="text-center p-4 text-danger">حدث خطأ أثناء تحميل البلاغات: ${err.message || 'خطأ غير معروف'}</div>`;
+        }
+      }
+    }
+    
+    // تحديث الإحصائيات
+    function updateStats(reports) {
+      if (!reports) return;
+      
+      const totalReports = reports.length;
+      const newReports = reports.filter(r => r.status === 'new').length;
+      const inProgressReports = reports.filter(r => r.status === 'in_progress').length;
+      const resolvedReports = reports.filter(r => r.status === 'resolved').length;
+      
+      document.getElementById('total-reports').textContent = totalReports;
+      document.getElementById('new-reports').textContent = newReports;
+      document.getElementById('in-progress-reports').textContent = inProgressReports;
+      document.getElementById('resolved-reports').textContent = resolvedReports;
+      
+      console.log('تم تحديث الإحصائيات:', { totalReports, newReports, inProgressReports, resolvedReports });
+    }
+    
+    // تحديث الإحصائيات بعد إضافة بلاغ جديد
+    function updateStatsAfterNewReport() {
+      const totalElement = document.getElementById('total-reports');
+      const newElement = document.getElementById('new-reports');
+      
+      if (totalElement) {
+        const currentTotal = parseInt(totalElement.textContent) || 0;
+        totalElement.textContent = currentTotal + 1;
+      }
+      
+      if (newElement) {
+        const currentNew = parseInt(newElement.textContent) || 0;
+        newElement.textContent = currentNew + 1;
+      }
+      
+      console.log('تم تحديث الإحصائيات بعد إضافة بلاغ جديد');
+    }
+    
+    // استرجاع الإحصائيات بعد فشل إضافة بلاغ
+    function updateStatsAfterFailedReport() {
+      const totalElement = document.getElementById('total-reports');
+      const newElement = document.getElementById('new-reports');
+      
+      if (totalElement) {
+        const currentTotal = parseInt(totalElement.textContent) || 0;
+        totalElement.textContent = Math.max(0, currentTotal - 1);
+      }
+      
+      if (newElement) {
+        const currentNew = parseInt(newElement.textContent) || 0;
+        newElement.textContent = Math.max(0, currentNew - 1);
+      }
+      
+      console.log('تم استرجاع الإحصائيات بعد فشل إضافة البلاغ');
+    }
+    
+    // تحميل البلاغات عند تحميل الصفحة
+    document.addEventListener('DOMContentLoaded', function() {
+      try {
+        console.log('تحميل الصفحة - بدء تحميل البلاغات من التخزين المحلي');
+        
+        // تحميل البلاغات من التخزين المحلي
+        loadReports();
+      } catch (err) {
+        console.error('خطأ في تحميل البلاغات:', err);
+        alert('حدث خطأ في تحميل البلاغات. الرجاء تحديث الصفحة والمحاولة مرة أخرى.');
+      }
+    });
+    
+    const reportForm = document.getElementById('reportForm');
+    if (reportForm){
+      reportForm.addEventListener('submit', async function(e){
+        e.preventDefault();
+        
+        // تعطيل زر الإرسال أثناء المعالجة
+        const submitButton = this.querySelector('button[type="submit"]');
+        if (submitButton) {
+          submitButton.disabled = true;
+          submitButton.innerHTML = 'جاري الإرسال...';
+        }
+        
+        try {
+          // معالجة الصور المرفوعة
+          const beforeImageFile = document.getElementById('before').files[0];
+          const afterImageFile = document.getElementById('after').files[0];
+          
+          let beforeImageData = null;
+          let afterImageData = null;
+          
+          // تحويل الصور إلى Base64 للحفظ
+          if (beforeImageFile) {
+            beforeImageData = await fileToBase64(beforeImageFile);
+          }
+          if (afterImageFile) {
+            afterImageData = await fileToBase64(afterImageFile);
+          }
+          
+          // تجميع بيانات النموذج
+          const data = {
+            id: 'temp_' + Date.now(), // معرف مؤقت للعرض فقط
+            title: document.getElementById('title').value,
+            description: document.getElementById('description').value,
+            district: document.getElementById('district').value,
+            commune: document.getElementById('commune').value,
+            category: document.getElementById('category').value,
+            priority: (document.getElementById('priority')||{value:'medium'}).value,
+            internalNote: (document.getElementById('internalNote')||{value:''}).value,
+            status: 'new',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            created_by: localStorage.getItem('userId') || null,
+            beforeImage: beforeImageData,
+            afterImage: afterImageData,
+            hasImages: !!(beforeImageData || afterImageData)
+          };
+          
+          // إضافة البلاغ فوراً إلى المعرض للعرض الفوري
+          console.log('إضافة البلاغ إلى المعرض وحفظه محلياً:', data);
+          const reportCard = addReportToGallery(data, true); // true للإضافة في المقدمة
+          
+          // حفظ البلاغ في التخزين المحلي
+          const saved = window.reportsStorage.addReport(data);
+          if (saved) {
+            console.log('تم حفظ البلاغ في التخزين المحلي بنجاح');
+          } else {
+            console.warn('فشل في حفظ البلاغ في التخزين المحلي');
+          }
+          
+          // تحديث الإحصائيات فوراً
+          updateStatsAfterNewReport();
+          
+          console.log('تم إضافة البلاغ وحفظه محلياً بنجاح');
+          alert('تم إضافة البلاغ وحفظه محلياً بنجاح! سيظهر حتى بعد تحديث الصفحة.');
+          
+          // إعادة تعيين النموذج
+          this.reset();
+          const pb=document.getElementById('prev-before'); if(pb) pb.innerHTML='';
+          const pa=document.getElementById('prev-after'); if(pa) pa.innerHTML='';
+        } catch (err) {
+          console.error('Error in form submission:', err);
+          alert('حدث خطأ أثناء إرسال البلاغ. الرجاء المحاولة مرة أخرى.');
+        } finally {
+          // إعادة تفعيل زر الإرسال
+          if (submitButton) {
+            submitButton.disabled = false;
+            submitButton.innerHTML = '📤 إرسال البلاغ';
+          }
+        }
+      });
+
+      const beforeInput=document.getElementById('before');
+      const afterInput=document.getElementById('after');
+      if(beforeInput) beforeInput.addEventListener('change', (e)=> previewImage(e.target,'prev-before'));
+      if(afterInput)  afterInput.addEventListener('change', (e)=> previewImage(e.target,'prev-after'));
+
+      function previewImage(input, previewId){
+        const holder=document.getElementById(previewId);
+        if(!holder) return; holder.innerHTML='';
+        if(input.files && input.files[0]){
+          const reader=new FileReader();
+          reader.onload=(ev)=>{
+            const img=new Image();
+            img.src=ev.target.result; img.style.maxWidth='100%'; img.style.borderRadius='8px';
+            holder.appendChild(img);
+          };
+          reader.readAsDataURL(input.files[0]);
+        }
+      }
+    }
+    
+    // Admin Messages Ticker Management
+    let adminMessages = [
+      'مرحباً بكم في نظام البلاغات الجديد',
+      'يرجى الإبلاغ عن أي مشاكل في البنية التحتية',
+      'تم تحديث النظام لتحسين الأداء',
+      'شكراً لتعاونكم في تطوير المدينة'
+    ];
+    
+    function updateAdminTicker() {
+      const tickerContent = document.querySelector('.ticker-content');
+      if (tickerContent && adminMessages.length > 0) {
+        tickerContent.innerHTML = adminMessages.map(msg => 
+          `<span class="ticker-item">الإدارة: ${msg}</span>`
+        ).join('');
+      }
+    }
+    
+    function addAdminMessage(message) {
+      if (message && message.trim()) {
+        adminMessages.unshift(message.trim());
+        if (adminMessages.length > 10) {
+          adminMessages = adminMessages.slice(0, 10); // Keep only last 10 messages
+        }
+        updateAdminTicker();
+      }
+    }
+    
+    // Initialize ticker on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      updateAdminTicker();
+    });
+    
+    // وظيفة لتحديد البلاغ كمحلول من قبل المسؤول
+    function markAsResolvedByOfficial(reportId, event) {
+      // منع انتشار الحدث لتجنب تفعيل أحداث أخرى
+      if (event) {
+        event.stopPropagation();
+      }
+      
+      if (!reportId) {
+        alert('خطأ: معرف البلاغ غير صحيح');
+        return;
+      }
+      
+      // تأكيد من المستخدم
+      if (!confirm('هل أنت متأكد من أن هذا البلاغ تم حله من قبل المسؤول؟')) {
+        return;
+      }
+      
+      try {
+        // تحديث حالة البلاغ في التخزين
+        const updatedData = {
+          status: 'resolved_by_official',
+          resolved_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+        
+        const success = window.reportsStorage.updateReport(reportId, updatedData);
+        
+        if (success) {
+          // إعادة تحميل البلاغات لعرض التحديث
+          loadReports();
+          
+          // عرض رسالة نجاح
+          alert('✅ تم تحديث حالة البلاغ إلى "تم الحل من قبل المسؤول" بنجاح!');
+          
+          console.log('تم تحديث البلاغ بنجاح:', reportId);
+        } else {
+          alert('❌ فشل في تحديث حالة البلاغ. يرجى المحاولة مرة أخرى.');
+          console.error('فشل في تحديث البلاغ:', reportId);
+        }
+      } catch (error) {
+        console.error('خطأ في تحديث البلاغ:', error);
+        alert('❌ حدث خطأ أثناء تحديث البلاغ. يرجى المحاولة مرة أخرى.');
+      }
+    }
+
+    // وظيفة لعرض الصور في النافذة المنبثقة
+    function showImageModal(reportData) {
+      const modal = document.getElementById('imageModal');
+      const modalTitle = document.getElementById('modalTitle');
+      const modalImages = document.getElementById('modalImages');
+      
+      modalTitle.textContent = reportData.title;
+      modalImages.innerHTML = '';
+      
+      // عرض صورة قبل الأشغال
+      if (reportData.beforeImage) {
+        const beforeDiv = document.createElement('div');
+        beforeDiv.innerHTML = `
+          <h5 style="margin-bottom:10px;">📷 صورة قبل الأشغال</h5>
+          <img src="${reportData.beforeImage}" style="width:100%;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1);" alt="صورة قبل الأشغال">
+        `;
+        modalImages.appendChild(beforeDiv);
+      }
+      
+      // عرض صورة بعد الأشغال
+      if (reportData.afterImage) {
+        const afterDiv = document.createElement('div');
+        afterDiv.innerHTML = `
+          <h5 style="margin-bottom:10px;">📷 صورة بعد الأشغال</h5>
+          <img src="${reportData.afterImage}" style="width:100%;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1);" alt="صورة بعد الأشغال">
+        `;
+        modalImages.appendChild(afterDiv);
+      }
+      
+      modal.style.display = 'block';
+    }
+    
+    // إغلاق النافذة المنبثقة
+    document.addEventListener('DOMContentLoaded', function() {
+      const modal = document.getElementById('imageModal');
+      const closeBtn = modal.querySelector('.close');
+      
+      closeBtn.onclick = function() {
+        modal.style.display = 'none';
+      }
+      
+      window.onclick = function(event) {
+        if (event.target === modal) {
+          modal.style.display = 'none';
+        }
+      }
+    });
+
+    // تمرير ناعم للروابط الداخلية
+    document.querySelectorAll('a[href^="#"]').forEach(a=>{
+      a.addEventListener('click', function(e){
+        const id = this.getAttribute('href');
+        if(id && id.startsWith('#') && id.length>1){
+          e.preventDefault();
+          document.querySelector(id).scrollIntoView({behavior:'smooth'});
+        }
+      });
+    });
+  </script>
+</body>
+</html>
